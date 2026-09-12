@@ -8,7 +8,8 @@
 
 <p align="center">
   <a href="https://github.com/Ic0u/MactoyThemer/releases/latest"><img src="https://img.shields.io/github/v/release/Ic0u/MactoyThemer?style=flat" alt="Latest release"></a>
-  <a href="https://github.com/Ic0u/MactoyThemer/actions/workflows/release.yml"><img src="https://github.com/Ic0u/MactoyThemer/actions/workflows/release.yml/badge.svg" alt="Release macOS"></a>
+  <img src="https://img.shields.io/badge/Xcode-15%2B-147EFB?logo=xcode&logoColor=white" alt="Xcode 15 or later">
+  <img src="https://img.shields.io/badge/Swift-5.9-F05138?logo=swift&logoColor=white" alt="Swift 5.9">
   <img src="https://img.shields.io/badge/macOS-10.13%2B-555?logo=apple&logoColor=white" alt="macOS 10.13 or later">
 </p>
 
@@ -22,7 +23,8 @@ Choose one installation method.
 curl -fsSL https://raw.githubusercontent.com/Ic0u/MactoyThemer/main/install.sh | bash
 ```
 
-**GitHub Releases:** [Download latest release](https://github.com/your-username/macUSB/releases/latest)
+### GitHub Releases
+[Download latest release](https://github.com/Ic0u/MactoyThemer/releases/latest)
 
 ## Features
 
