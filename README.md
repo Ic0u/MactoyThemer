@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="MactoyThemer/Assets.xcassets/AppIcon.appiconset/icon_128x128%402x.png" width="256" alt="MactoyThemer app icon">
+  <img src="MactoyThemer/Assets.xcassets/AppIcon.appiconset/icon_128x128%402x.png" width="150" alt="MactoyThemer app icon">
 </p>
 
 <h1 align="center">MactoyThemer</h1>
