@@ -4,15 +4,13 @@
 
 <h1 align="center">MactoyThemer</h1>
 
-<p align="center">Your Ventoy, your style.</p>
+<p align="center">macOS utility for installing and managing themes on a Ventoy drive.</p>
 
 <p align="center">
   <a href="https://github.com/Ic0u/MactoyThemer/releases/latest"><img src="https://img.shields.io/github/v/release/Ic0u/MactoyThemer?style=flat" alt="Latest release"></a>
   <a href="https://github.com/Ic0u/MactoyThemer/actions/workflows/release.yml"><img src="https://github.com/Ic0u/MactoyThemer/actions/workflows/release.yml/badge.svg" alt="Release macOS"></a>
   <img src="https://img.shields.io/badge/macOS-10.13%2B-555?logo=apple&logoColor=white" alt="macOS 10.13 or later">
 </p>
-
-macOS utility for installing and managing themes on a Ventoy drive.
 
 ## Download
 
