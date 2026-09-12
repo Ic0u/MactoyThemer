@@ -6,7 +6,9 @@ app_name="MactoyThemer"
 variant=${MACTOY_VARIANT:-auto}
 install_dir=${MACTOY_PREFIX:-/Applications}
 
-
+# Pin the Apple Developer Team ID of your signing certificate.
+# Find it with: codesign -dv --verbose=4 /Applications/MactoyThemer.app 2>&1 | grep TeamIdentifier
+# Leave empty ONLY if the app is ad-hoc signed -- the script will warn loudly.
 expected_team_id=${MACTOY_TEAM_ID:-""}
 
 minimum_macos_major=10
@@ -20,30 +22,50 @@ if [[ -t 1 && "${TERM:-dumb}" != dumb ]]; then
     dim=$'\033[2m'
     bold=$'\033[1m'
     reset=$'\033[0m'
+    columns=$(/usr/bin/tput cols 2>/dev/null || echo 80)
 else
     cyan="" green="" yellow="" red="" dim="" bold="" reset=""
+    columns=80
 fi
+[[ "$columns" =~ ^[0-9]+$ ]] || columns=80
+
+indent="  "
 
 die() {
-    printf '\n  %s%s✗ %s%s\n' "$bold" "$red" "$1" "$reset" >&2
+    printf '\n%s%s%s✗ %s%s\n' "$indent" "$bold" "$red" "$1" "$reset" >&2
     exit 1
 }
 
 warn() {
-    printf '  %s! %s%s\n' "$yellow" "$1" "$reset" >&2
+    printf '%s%s! %s%s\n' "$indent" "$yellow" "$1" "$reset" >&2
+}
+
+# Sub-detail of the step above it -- indented one level deeper.
+detail() {
+    printf '%s%s%s↳ %s%s\n' "$indent" "$indent" "$dim" "$1" "$reset"
 }
 
 print_banner() {
+    local line
+    # The art is 76 columns wide; 78 with the indent. Below that it wraps into
+    # noise, so fall back to a compact wordmark.
+    if (( columns < 78 )); then
+        printf '%s%s%s%s%s\n\n' "$indent" "$bold" "$cyan" "$app_name" "$reset"
+        return
+    fi
     printf '%s' "$cyan"
-    printf '%s\n' \
-        '▓▒░▀▄             ▄▀▄ ▄▀▄ ▀█▀ ▄▀▄ █ ▒ ▄▓▒░░░░░▒▓▓▒░░▒▓ █ ▒ ▄▀▀ █▀▄▀▄ ▄▀▀ █▀▄' \
-        '▒▒░░█▀▄  ▄▀▄      ▓▄▓ ▓    ▓  ▓ ▓  ▀▓  ▀▀▀▀▀▀█▒░█▀▀▀▀▀ ▓▀▓ ▓▀  ▓ ▓ ▓ ▓▀  ▓▄▀' \
-        '▒░░▄███▀▀███▀▄    ▒ ▒ ▀▄▀  ▒  ▀▄▀ ▒▄▀      ▄▀▒░▄▀      ▒ █ ▀▄▄ ▒ ▀ ▒ ▀▄▄ ▒ █' \
-        '░█▒ ▀▄░▒█▄▀▄██░▄                         ▄▀██▄▀' \
-        '█▓▒   ▒░█   █░▒▓█                      ▄▀██▄▀' \
-        '░▒▓   ░▄▀ ▄▀██▓▀                      █▒░▄▀' \
-        '▀▀▀       ▄█▄▀                         ▀▀'
-    printf '%s\n\n' "$reset"
+    while IFS= read -r line; do
+        printf '%s%s\n' "$indent" "$line"
+    done <<'ART'
+▓▒░▀▄             ▄▀▄ ▄▀▄ ▀█▀ ▄▀▄ █ ▒ ▄▓▒░░░░░▒▓▓▒░░▒▓ █ ▒ ▄▀▀ █▀▄▀▄ ▄▀▀ █▀▄
+▒▒░░█▀▄  ▄▀▄      ▓▄▓ ▓    ▓  ▓ ▓  ▀▓  ▀▀▀▀▀▀█▒░█▀▀▀▀▀ ▓▀▓ ▓▀  ▓ ▓ ▓ ▓▀  ▓▄▀
+▒░░▄███▀▀███▀▄    ▒ ▒ ▀▄▀  ▒  ▀▄▀ ▒▄▀      ▄▀▒░▄▀      ▒ █ ▀▄▄ ▒ ▀ ▒ ▀▄▄ ▒ █
+░█▒ ▀▄░▒█▄▀▄██░▄                         ▄▀██▄▀
+█▓▒   ▒░█   █░▒▓█                      ▄▀██▄▀
+░▒▓   ░▄▀ ▄▀██▓▀                      █▒░▄▀
+▀▀▀       ▄█▄▀                         ▀▀
+ART
+    printf '%s\n' "$reset"
 }
 
 repeat_character() {
@@ -58,14 +80,27 @@ repeat_character() {
 }
 
 total_steps=7
+# A 24-cell bar plus the longest label needs ~76 columns. Shrink it rather
+# than let every progress line wrap on a narrow terminal.
+if (( columns < 78 )); then bar_width=10; else bar_width=24; fi
+
 show_progress() {
     local current=$1
     local label=$2
-    local width=24
+    local width=$bar_width
     local filled=$((current * width / total_steps))
     local empty=$((width - filled))
-    printf '  %s[%s%s]%s %s%d/%d%s  %s\n' \
-        "$cyan" "$(repeat_character '█' "$filled")" \
+
+    # Chrome around the label: indent(2) [bar] space n/7 gap(2) == width + 10
+    local available=$(( columns - width - 10 ))
+    (( available < 12 )) && available=12
+    if (( ${#label} > available )); then
+        # ASCII marker: "…" is 3 bytes and ${#var} counts bytes in a non-UTF-8
+        # locale, which would throw the width math off.
+        label="${label:0:$((available - 2))}.."
+    fi
+    printf '%s%s[%s%s]%s %s%d/%d%s  %s\n' \
+        "$indent" "$cyan" "$(repeat_character '█' "$filled")" \
         "$(repeat_character '░' "$empty")" "$reset" \
         "$dim" "$current" "$total_steps" "$reset" "$label"
 }
@@ -204,7 +239,7 @@ authority=$(printf '%s\n' "$signing_info" | /usr/bin/awk -F'=' '/^Authority=/ { 
 if [[ -n "$expected_team_id" ]]; then
     [[ "$actual_team_id" == "$expected_team_id" ]] \
         || die "Unexpected signing team: got '${actual_team_id:-none}', expected '$expected_team_id'."
-    printf '  %ssigned by %s (%s)%s\n' "$dim" "${authority:-unknown}" "$actual_team_id" "$reset"
+    detail "signed by ${authority:-unknown} ($actual_team_id)"
 else
     warn "No Team ID pinned -- signature origin is unverified."
     warn "Set MACTOY_TEAM_ID, or edit expected_team_id in this script."
@@ -265,5 +300,5 @@ installed_version=$(/usr/bin/defaults read "$destination/Contents/Info" CFBundle
 
 show_progress 7 "Opening $app_name"
 /usr/bin/open "$destination"
-printf '\n  %s%s✓ %s %s installed and open.%s\n' \
-    "$bold" "$green" "$app_name" "$installed_version" "$reset"
+printf '\n%s%s%s✓ %s %s installed and open.%s\n' \
+    "$indent" "$bold" "$green" "$app_name" "$installed_version" "$reset"
