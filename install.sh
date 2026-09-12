@@ -37,17 +37,16 @@ indent="  "
 
 # ------------------------------------------------------------- output ------
 
-# Fatal, user-facing. Plain language, no internals.
 die() {
-    printf '\n%s%s%s%s%s\n' "$indent" "$bold" "$red" "$1" "$reset" >&2
-    [[ -n "${2:-}" ]] && printf '%s%s%s%s\n' "$indent" "$dim" "$2" "$reset" >&2
+    printf '\n%s\n' "${indent}${bold}${red}${1}${reset}" >&2
+    [[ -n "${2:-}" ]] && printf '%s\n' "${indent}${dim}${2}${reset}" >&2
     exit 1
 }
 
 # Maintainer-facing. Hidden unless MACTOY_DEBUG=1 -- a user can't act on these.
 debug() {
     (( verbose == 1 )) || return 0
-    printf '%s%s· %s%s\n' "$indent" "$dim" "$1" "$reset" >&2
+    printf '%s\n' "${indent}${dim}· ${1}${reset}" >&2
 }
 
 repeat_character() {
@@ -59,41 +58,46 @@ repeat_character() {
     printf '%s' "$output"
 }
 
-total_steps=3
-if (( columns < 78 )); then bar_width=12; else bar_width=24; fi
+if (( columns < 78 )); then bar_width=14; else bar_width=32; fi
 
-draw_bar() {
-    local current=$1 label=$2 fraction=${3:-100} terminator=${4:-$'\n'}
-    local width=$bar_width
-    local base=$(( (current - 1) * width / total_steps ))
-    local span=$(( current * width / total_steps - base ))
-    local filled=$(( base + span * fraction / 100 ))
-    (( filled > width )) && filled=width
-    local empty=$(( width - filled ))
+# ONE bar for the whole install. Redrawn in place; the label says what's
+# happening. Percent budget: download 0-70, verify 70-90, install 90-100.
+progress() {
+    local pct=$1 label=$2
 
-    local available=$(( columns - width - 8 ))
+    if (( interactive == 0 )); then
+        printf '%s\n' "${indent}${label}"
+        return 0
+    fi
+
+    (( pct > 100 )) && pct=100
+    (( pct < 0 )) && pct=0
+    local filled=$(( bar_width * pct / 100 ))
+    local empty=$(( bar_width - filled ))
+
+    local available=$(( columns - bar_width - 8 ))
     (( available < 12 )) && available=12
     (( ${#label} > available )) && label="${label:0:$((available - 2))}.."
 
-    printf '%s%s[%s%s%s%s%s]%s  %s%s%s' \
-        "$indent" "$dim" "$reset" \
-        "$accent$(repeat_character '█' "$filled")" \
-        "$track$(repeat_character '█' "$empty")" \
-        "$reset$dim" "" "$reset" \
-        "$label" "$clear_line" "$terminator"
+    local bar="${accent}$(repeat_character '█' "$filled")${track}$(repeat_character '█' "$empty")"
+    # Single argument: no specifier/argument count to get wrong.
+    printf '%s\r' "${indent}${dim}[${bar}${dim}]${reset}  ${label}${clear_line}"
 }
 
-step() { draw_bar "$1" "$2" 100 $'\n'; }
+progress_clear() {
+    (( interactive == 1 )) && printf '\r%s' "$clear_line"
+    return 0
+}
 
 print_banner() {
     local line
     if (( columns < 78 )); then
-        printf '\n%s%s%s%s%s\n\n' "$indent" "$bold" "$accent" "$app_name" "$reset"
-        return
+        printf '\n%s\n\n' "${indent}${bold}${accent}${app_name}${reset}"
+        return 0
     fi
     printf '\n%s' "$accent"
     while IFS= read -r line; do
-        printf '%s%s\n' "$indent" "$line"
+        printf '%s\n' "${indent}${line}"
     done <<'ART'
 ▓▒░▀▄             ▄▀▄ ▄▀▄ ▀█▀ ▄▀▄ █ ▒ ▄▓▒░░░░░▒▓▓▒░░▒▓ █ ▒ ▄▀▀ █▀▄▀▄ ▄▀▀ █▀▄
 ▒▒░░█▀▄  ▄▀▄      ▓▄▓ ▓    ▓  ▓ ▓  ▀▓  ▀▀▀▀▀▀█▒░█▀▀▀▀▀ ▓▀▓ ▓▀  ▓ ▓ ▓ ▓▀  ▓▄▀
@@ -132,7 +136,7 @@ if [[ -w "$install_dir" ]]; then
 else
     needs_sudo=1
     run_priv() { /usr/bin/sudo "$@"; }
-    printf '%s%sAdministrator password needed to install.%s\n\n' "$indent" "$dim" "$reset"
+    printf '%s\n\n' "${indent}${dim}Administrator password needed to install.${reset}"
     /usr/bin/sudo -v || die "Installation cancelled."
 fi
 
@@ -154,7 +158,11 @@ debug "architecture: $variant"
 
 asset="$app_name-mac-$variant.dmg"
 base_url="https://github.com/$repository/releases/latest/download"
-work_dir=$(/usr/bin/mktemp -d "${TMPDIR:-/tmp}/mactoy-installer.XXXXXX")
+# TMPDIR ends with a slash on macOS; normalize so the sweep's glob produces
+# the same spelling as mktemp did.
+tmp_root=${TMPDIR:-/tmp}
+tmp_root=${tmp_root%/}
+work_dir=$(/usr/bin/mktemp -d "$tmp_root/mactoy-installer.XXXXXX")
 mount_dir="$work_dir/mount"
 dmg="$work_dir/$asset"
 destination="$install_dir/$app_name.app"
@@ -163,34 +171,80 @@ mounted=0
 
 cleanup() {
     local status=$?
+    progress_clear
+
     if [[ "$mounted" == 1 ]]; then
-        /usr/bin/hdiutil detach "$mount_dir" -quiet -force 2>/dev/null || true
+        for _ in 1 2 3; do
+            /usr/bin/hdiutil detach "$mount_dir" -quiet 2>/dev/null && break
+            /bin/sleep 0.3
+        done
+        /usr/sbin/diskutil info "$mount_dir" >/dev/null 2>&1 \
+            && /usr/bin/hdiutil detach "$mount_dir" -quiet -force 2>/dev/null || true
     fi
-    # Put the old version back if we were interrupted mid-swap.
+
     if [[ -n "$backup" && -e "$backup" && ! -e "$destination" ]]; then
         run_priv /bin/mv "$backup" "$destination" 2>/dev/null || true
+        debug "restored the previous version after an interrupted install"
     fi
     if [[ -n "$backup" && -e "$backup" ]]; then
         run_priv /bin/rm -rf "$backup" 2>/dev/null || true
     fi
-    /bin/rm -rf "$work_dir"
+
+    /bin/rm -rf "$work_dir" 2>/dev/null || true
+    debug "removed temporary files"
     exit "$status"
 }
 trap cleanup EXIT INT TERM
 
+# A run killed with SIGKILL or by power loss never fires the trap above, so it
+# leaves a mounted image, a temp dir, or a backup behind. Sweep those now.
+sweep_leftovers() {
+    local leftover swept=0
+
+    for leftover in "$tmp_root"/mactoy-installer.*; do
+        [[ -d "$leftover" ]] || continue
+        # Inode comparison, not string comparison -- path spelling ("//" vs "/",
+        # symlinked temp roots) must never let this delete the current run's dir.
+        [[ "$leftover" -ef "$work_dir" ]] && continue
+        if /usr/sbin/diskutil info "$leftover/mount" >/dev/null 2>&1; then
+            /usr/bin/hdiutil detach "$leftover/mount" -quiet -force 2>/dev/null || true
+        fi
+        /bin/rm -rf "$leftover" 2>/dev/null || true
+        swept=$((swept + 1))
+    done
+
+    for leftover in "$install_dir"/."$app_name".backup.*; do
+        [[ -e "$leftover" ]] || continue
+        # If the app is missing, that backup IS the user's only copy.
+        if [[ ! -e "$destination" ]]; then
+            run_priv /bin/mv "$leftover" "$destination" 2>/dev/null || true
+            debug "restored an interrupted install from backup"
+        else
+            run_priv /bin/rm -rf "$leftover" 2>/dev/null || true
+        fi
+        swept=$((swept + 1))
+    done
+
+    (( swept > 0 )) && debug "cleaned up $swept leftover item(s) from a previous run"
+    return 0
+}
+sweep_leftovers
+
 curl_common=(--fail --location --show-error --proto '=https' --tlsv1.2
              --connect-timeout 15 --retry 3 --retry-delay 2)
 
-# ------------------------------------------------------ 1. downloading -----
+# --------------------------------------------------------- downloading -----
 
-# curl --progress-bar draws its own full-width bar at column 0 and wrecks the
-# layout, so download quietly and render our own.
+progress 0 "Downloading"
+
 total_bytes=$(/usr/bin/curl "${curl_common[@]}" --silent --head "$base_url/$asset" 2>/dev/null \
     | /usr/bin/awk 'BEGIN { IGNORECASE = 1 }
                     /^content-length:/ { gsub(/\r/, ""); value = $2 }
                     END { if (value ~ /^[0-9]+$/) print value }' || true)
 
 if (( interactive == 1 )); then
+    # curl --progress-bar draws its own full-width bar at column 0 and wrecks
+    # the layout, so download quietly and drive our bar from the file size.
     /usr/bin/curl "${curl_common[@]}" --silent "$base_url/$asset" --output "$dmg" &
     curl_pid=$!
     while kill -0 "$curl_pid" 2>/dev/null; do
@@ -198,9 +252,7 @@ if (( interactive == 1 )); then
             got=$(/usr/bin/stat -f%z "$dmg" 2>/dev/null || echo 0)
             pct=$(( got * 100 / total_bytes ))
             (( pct > 100 )) && pct=100
-            draw_bar 1 "Downloading  ${pct}%" "$pct" $'\r'
-        else
-            draw_bar 1 "Downloading" 0 $'\r'
+            progress $(( pct * 70 / 100 )) "Downloading  ${pct}%"
         fi
         /bin/sleep 0.1
     done
@@ -209,15 +261,14 @@ else
     /usr/bin/curl "${curl_common[@]}" --silent "$base_url/$asset" --output "$dmg" \
         || die "Download failed." "Check your internet connection and try again."
 fi
-step 1 "Downloaded"
 
 /usr/bin/curl "${curl_common[@]}" --silent \
     "$base_url/$app_name-SHA256SUMS.txt" --output "$work_dir/SHA256SUMS.txt" \
     || die "Download failed." "Check your internet connection and try again."
 
-# -------------------------------------------------------- 2. verifying -----
+# ----------------------------------------------------------- verifying -----
 
-draw_bar 2 "Verifying" 0 $'\r'
+progress 70 "Verifying"
 
 expected=$(/usr/bin/awk -v name="$asset" '
     { file = $2; sub(/^\*/, "", file); sub(/^.*\//, "", file)
@@ -236,6 +287,8 @@ source_app="$mount_dir/$app_name.app"
 staged_app="$work_dir/$app_name.app"
 [[ -d "$source_app" ]] || die "The download is missing $app_name." "Nothing was installed."
 /usr/bin/ditto "$source_app" "$staged_app"
+
+progress 80 "Verifying"
 
 /usr/bin/codesign --verify --deep --strict --all-architectures "$staged_app" 2>/dev/null \
     || die "This copy of $app_name couldn't be verified." "Nothing was installed."
@@ -259,11 +312,10 @@ else
     notarized=0
     debug "app is not notarized -- clearing quarantine manually"
 fi
-step 2 "Verified"
 
-# ------------------------------------------------------- 3. installing -----
+# ---------------------------------------------------------- installing -----
 
-draw_bar 3 "Installing" 0 $'\r'
+progress 90 "Installing"
 
 if /usr/bin/pgrep -x "$app_name" >/dev/null 2>&1; then
     /usr/bin/osascript -e "quit app \"$app_name\"" >/dev/null 2>&1 || true
@@ -297,11 +349,29 @@ if [[ -n "$backup" && -e "$backup" ]]; then
     run_priv /bin/rm -rf "$backup"
     backup=""
 fi
-step 3 "Installed"
+
+progress 100 "Installing"
+
+# ----------------------------------------------------------------- done ----
 
 installed_version=$(/usr/bin/defaults read "$destination/Contents/Info" CFBundleShortVersionString 2>/dev/null || echo "")
+if [[ -n "$installed_version" ]]; then
+    ready_message="$app_name $installed_version is ready."
+else
+    ready_message="$app_name is ready."
+fi
+
 /usr/bin/open "$destination"
 
-printf '\n%s%s%s✓%s %s%s %s%sis ready.%s\n\n' \
-    "$indent" "$bold" "$green" "$reset" \
-    "$bold" "$app_name" "$installed_version" "$reset" "$dim" "$reset"
+progress_clear
+printf '\n%s\n' "${indent}${bold}${green}✓${reset}  ${bold}${ready_message}${reset}"
+
+# A copy in the other common location would keep launching the old version.
+# Flagged, never deleted -- removing an app the user put elsewhere isn't our call.
+for other in /Applications "$HOME/Applications"; do
+    [[ "$other" == "$install_dir" ]] && continue
+    [[ -e "$other/$app_name.app" ]] || continue
+    printf '%s\n' "${indent}${dim}   Another copy is in $other -- you may want to remove it.${reset}"
+done
+
+printf '\n'
