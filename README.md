@@ -22,7 +22,6 @@ Choose a download, unzip it, and move **MactoyThemer.app** to Applications.
 | [Mac (x64)](https://github.com/Ic0u/MactoyThemer/releases/latest/download/MactoyThemer-mac-x64.zip) | Intel | 10.13 |
 | [Mac Universal](https://github.com/Ic0u/MactoyThemer/releases/latest/download/MactoyThemer-mac-universal.zip) | Apple Silicon and Intel | 11 / 10.13 |
 
-GitHub Actions builds are ad-hoc signed and not notarized by Apple; macOS Gatekeeper may block them when first opened. Sparkle uses the universal download for automatic updates.
 
 ## Features
 
