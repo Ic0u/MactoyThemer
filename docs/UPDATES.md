@@ -25,35 +25,54 @@ embedded credentials. The private key stays in the macOS Keychain under the
    `bin/generate_keys --account Ic0u.MactoyThemer -x /secure/path/sparkle.key`.
    Add that file's contents as the GitHub Actions secret `SPARKLE_PRIVATE_KEY`.
    Keep a secure backup and remove the temporary export. Never commit it.
-5. Commit the workflow, publishing script, and `Package.resolved` to GitHub.
+5. Keep `.github/workflows/release.yml`, the release scripts, and
+   `Package.resolved` committed to GitHub.
 
 ## Release an update
 
 1. Increase `CURRENT_PROJECT_VERSION`; Sparkle compares this build number.
-   Update `MARKETING_VERSION` for the displayed version.
-2. Archive with Xcode, export using Developer ID, and notarize the app, including
-   Sparkle's embedded helpers. The app still targets macOS 10.13.
-3. Package the exported app, preserving bundle structure:
+   Set `MARKETING_VERSION` to the release version, such as `1.1`.
+2. Commit the changes, then push a matching tag:
 
    ```sh
-   ditto -c -k --sequesterRsrc --keepParent /path/to/MactoyThemer.app MactoyThemer.zip
+   git tag -a v1.1 -m "MactoyThemer 1.1"
+   git push origin main v1.1
    ```
 
-4. Create a draft GitHub release with a version tag such as `v1.1.0`, attach
-   `MactoyThemer.zip`, then run **Publish Sparkle appcast** with that tag from the
-   Actions tab. It signs the archive and attaches `appcast.xml` to that release.
-5. Publish the release and mark it latest. Generating the appcast while still a
-   draft avoids a missing-feed window and works with immutable releases. The
-   workflow also runs when a release is published and skips releases that already
-   contain `appcast.xml`. Manual reruns replace only that asset on editable
-   releases. Prereleases are excluded from the stable feed.
-6. From an older installed build in `/Applications`, test **Check for Updates…**,
-   download, installation, and relaunch. Test scheduled checks after granting
-   Sparkle permission. A passing build does not verify delivery or signing.
+3. **Release macOS** builds the tagged app source in three jobs:
 
-Keep Hardened Runtime enabled for distribution. Use an Apple Development
-identity for local builds so library validation can load Sparkle. The dependency
-stays on Sparkle 2.9 patch releases to preserve macOS 10.13 support.
+   | Download | Architectures | Runner |
+   | --- | --- | --- |
+   | `MactoyThemer-mac-arm64.zip` | arm64 | `macos-15` |
+   | `MactoyThemer-mac-x64.zip` | x86_64 | `macos-15-intel` |
+   | `MactoyThemer-mac-universal.zip` | arm64 + x86_64 | `macos-15` |
+
+4. Each job checks the version, architectures, bundle signatures, and native
+   launch. Only after all jobs succeed does the workflow upload the downloads and
+   `MactoyThemer-SHA256SUMS.txt`, sign the universal archive with Sparkle, and
+   publish the completed draft as the latest release.
+5. To build an existing tag, run **Release macOS** from the Actions tab and enter
+   its tag. Existing downloads and appcasts are preserved on retries. This also
+   preserves v1.0's original `MactoyThemer.zip` update URL. Published immutable
+   releases cannot receive additional assets. Only stable version tags are accepted.
+6. Test **Check for Updates…** from an older installed build in `/Applications`,
+   including installation and relaunch. Every architecture uses the universal
+   update so the same feed works on both Mac types.
+
+## Apple signing
+
+The CI builds are ad-hoc signed and not notarized. They disable Hardened Runtime
+because ad-hoc signatures cannot satisfy team-based library validation for
+Sparkle. Gatekeeper may block downloaded builds. Sparkle's Ed25519 signature
+provides update integrity, not Apple notarization.
+
+For Developer ID distribution, configure Apple signing and notarization before
+packaging, and enable Hardened Runtime for the app and embedded helpers. Store
+credentials in Actions secrets, never in the repository. The local Xcode project
+keeps Hardened Runtime enabled for builds signed with an Apple identity.
+
+Sparkle stays on 2.9 patch releases for macOS 10.13 support. Apple Silicon builds
+require macOS 11 or later.
 
 References: [Sparkle setup](https://sparkle-project.org/documentation/),
 [GitHub release events](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#release).

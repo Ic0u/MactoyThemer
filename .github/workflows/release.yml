@@ -1,0 +1,104 @@
+name: Release macOS
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing version tag to build (for example, v1.0)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
+env:
+  RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+
+jobs:
+  build:
+    name: Mac (${{ matrix.variant }})
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - variant: arm64
+            runner: macos-15
+          - variant: x64
+            runner: macos-15-intel
+          - variant: universal
+            runner: macos-15
+    steps:
+      - name: Check out release automation
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Validate version tag
+        shell: bash
+        run: '[[ "$RELEASE_TAG" =~ ^v[0-9]+(\.[0-9]+){1,2}$ ]]'
+      - name: Check out tagged app source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: refs/tags/${{ env.RELEASE_TAG }}
+          path: source
+          persist-credentials: false
+      - name: Build, verify, and package
+        env:
+          RELEASE_VARIANT: ${{ matrix.variant }}
+        run: bash scripts/build-release.sh "$RELEASE_VARIANT" "$GITHUB_WORKSPACE/source" "$GITHUB_WORKSPACE/dist"
+      - name: Save download
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: mac-${{ matrix.variant }}
+          path: dist/MactoyThemer-mac-${{ matrix.variant }}.zip
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
+
+  publish:
+    name: Publish release and Sparkle feed
+    needs: build
+    runs-on: macos-15
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: mac-*
+          merge-multiple: true
+          path: dist
+      - name: Attach all three downloads
+        id: assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash scripts/upload-release.sh "$GITHUB_WORKSPACE/dist"
+      - name: Resolve pinned Sparkle tools
+        run: >-
+          xcodebuild -resolvePackageDependencies
+          -project MactoyThemer.xcodeproj -scheme MactoyThemer
+          -derivedDataPath "$RUNNER_TEMP/sparkle-build"
+          -onlyUsePackageVersionsFromResolvedFile
+      - name: Sign the universal update
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+          SPARKLE_BIN: ${{ runner.temp }}/sparkle-build/SourcePackages/artifacts/sparkle/Sparkle/bin
+          SPARKLE_ARCHIVE_NAME: MactoyThemer-mac-universal.zip
+          PRESERVE_EXISTING_APPCAST: 'true'
+        run: bash scripts/publish-appcast.sh
+      - name: Publish completed draft
+        if: steps.assets.outputs.draft == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release edit "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --draft=false --latest

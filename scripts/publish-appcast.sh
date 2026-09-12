@@ -19,7 +19,7 @@ fi
 
 # A draft can already contain its signed feed before it is published.
 # Leave those assets alone, including when GitHub release immutability is enabled.
-if [[ "${GITHUB_EVENT_NAME:-}" == release ]] && \
+if [[ "${GITHUB_EVENT_NAME:-}" == release || "${PRESERVE_EXISTING_APPCAST:-}" == true ]] && \
    [[ "$(gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --json assets --jq '[.assets[].name] | index("appcast.xml") != null')" == true ]]; then
     echo "The release already contains appcast.xml."
     exit 0
@@ -31,11 +31,16 @@ fi
 work_dir=$(mktemp -d)
 trap 'rm -rf "$work_dir"' EXIT
 mkdir "$work_dir/updates"
+archive_name=${SPARKLE_ARCHIVE_NAME:-MactoyThemer.zip}
+case "$archive_name" in
+    MactoyThemer.zip|MactoyThemer-mac-universal.zip) ;;
+    *) echo "The stable feed requires the universal archive." >&2; exit 1 ;;
+esac
 gh release download "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" \
-    --pattern MactoyThemer.zip --dir "$work_dir/updates"
+    --pattern "$archive_name" --dir "$work_dir/updates"
 
 # Verify the distributed app was configured for this repository before signing.
-python3 - "$work_dir/updates/MactoyThemer.zip" <<'PY'
+python3 - "$work_dir/updates/$archive_name" <<'PY'
 import base64
 import os
 import plistlib

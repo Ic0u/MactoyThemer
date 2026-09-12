@@ -1,16 +1,30 @@
-# MactoyThemer
-
 <p align="center">
   <img src="MactoyThemer/Assets.xcassets/AppIcon.appiconset/icon_128x128%402x.png" width="128" alt="MactoyThemer app icon">
+</p>
+
+<h1 align="center">MactoyThemer</h1>
+
+<p align="center">Your Ventoy, your style.</p>
+
+<p align="center">
+  <a href="https://github.com/Ic0u/MactoyThemer/releases/latest"><img src="https://img.shields.io/github/v/release/Ic0u/MactoyThemer?style=flat" alt="Latest release"></a>
+  <a href="https://github.com/Ic0u/MactoyThemer/actions/workflows/release.yml"><img src="https://github.com/Ic0u/MactoyThemer/actions/workflows/release.yml/badge.svg" alt="Release macOS"></a>
+  <img src="https://img.shields.io/badge/macOS-10.13%2B-555?logo=apple&logoColor=white" alt="macOS 10.13 or later">
 </p>
 
 MactoyThemer is a native macOS utility for installing and managing themes on a mounted Ventoy drive. It uses AppKit and keeps the interface compact.
 
 ## Download
 
-Download **MactoyThemer.zip** from [Releases](https://github.com/Ic0u/MactoyThemer/releases/latest), unzip it, and move **MactoyThemer.app** to Applications. Version 1.0 includes Intel and Apple Silicon support.
+Choose a download, unzip it, and move **MactoyThemer.app** to Applications.
 
-The v1.0 build is not notarized by Apple; macOS Gatekeeper may block it when first opened.
+| Download | Mac | Minimum macOS |
+| --- | --- | --- |
+| [Mac (arm64)](https://github.com/Ic0u/MactoyThemer/releases/latest/download/MactoyThemer-mac-arm64.zip) | Apple Silicon | 11 |
+| [Mac (x64)](https://github.com/Ic0u/MactoyThemer/releases/latest/download/MactoyThemer-mac-x64.zip) | Intel | 10.13 |
+| [Mac Universal](https://github.com/Ic0u/MactoyThemer/releases/latest/download/MactoyThemer-mac-universal.zip) | Apple Silicon and Intel | 11 / 10.13 |
+
+GitHub Actions builds are ad-hoc signed and not notarized by Apple; macOS Gatekeeper may block them when first opened. Sparkle uses the universal download for automatic updates.
 
 ## Features
 
