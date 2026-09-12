@@ -43,18 +43,19 @@ embedded credentials. The private key stays in the macOS Keychain under the
 
    | Download | Architectures | Runner |
    | --- | --- | --- |
-   | `MactoyThemer-mac-arm64.zip` | arm64 | `macos-15` |
-   | `MactoyThemer-mac-x64.zip` | x86_64 | `macos-15-intel` |
-   | `MactoyThemer-mac-universal.zip` | arm64 + x86_64 | `macos-15` |
+   | `MactoyThemer-mac-arm64.dmg` | arm64 | `macos-15` |
+   | `MactoyThemer-mac-x64.dmg` | x86_64 | `macos-15-intel` |
+   | `MactoyThemer-mac-universal.dmg` | arm64 + x86_64 | `macos-15` |
 
 4. Each job checks the version, architectures, bundle signatures, and native
    launch. Only after all jobs succeed does the workflow upload the downloads and
    `MactoyThemer-SHA256SUMS.txt`, sign the universal archive with Sparkle, and
    publish the completed draft as the latest release.
 5. To build an existing tag, run **Release macOS** from the Actions tab and enter
-   its tag. Existing downloads and appcasts are preserved on retries. This also
-   preserves v1.0's original `MactoyThemer.zip` update URL. Published immutable
-   releases cannot receive additional assets. Only stable version tags are accepted.
+   its tag. Existing DMGs are preserved on retries, while the appcast and checksum
+   are refreshed. Legacy ZIP downloads are removed only after the DMG appcast is
+   signed successfully. Immutable releases cannot receive updated assets. Only
+   stable version tags are accepted.
 6. Test **Check for Updates…** from an older installed build in `/Applications`,
    including installation and relaunch. Every architecture uses the universal
    update so the same feed works on both Mac types.

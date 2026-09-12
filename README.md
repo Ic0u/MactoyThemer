@@ -13,18 +13,26 @@
 </p>
 
 ## Download
----
- 
-Choose one installation method:
- 
-1. **GitHub Releases:** [Download latest release](https://github.com/your-username/macUSB/releases/latest)
-Choose a download, unzip it, and move **MactoyThemer.app** to Applications.
-2. **Terminal:**
+
+Choose one installation method.
+
+### Terminal
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/Ic0u/MactoyThemer/main/install.sh | bash
 ```
-curl
-```
- 
----
+
+The installer detects your Mac, verifies the release checksum, installs the app in `/Applications`, removes the app's quarantine attribute, and opens it.
+
+### GitHub Releases
+
+Open the DMG and drag **MactoyThemer.app** to Applications.
+
+| Download | Mac | Minimum macOS |
+| --- | --- | --- |
+| [Mac (arm64)](https://github.com/Ic0u/MactoyThemer/releases/latest/download/MactoyThemer-mac-arm64.dmg) | Apple Silicon | 11 |
+| [Mac (x64)](https://github.com/Ic0u/MactoyThemer/releases/latest/download/MactoyThemer-mac-x64.dmg) | Intel | 10.13 |
+| [Mac Universal](https://github.com/Ic0u/MactoyThemer/releases/latest/download/MactoyThemer-mac-universal.dmg) | Apple Silicon and Intel | 11 / 10.13 |
 
 
 ## Features

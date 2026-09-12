@@ -73,4 +73,11 @@ with open(app.parent / "launch.log", "w") as log:
             process.wait(timeout=5)
 PY
 
-ditto -c -k --sequesterRsrc --keepParent "$app" "$output_dir/MactoyThemer-mac-$variant.zip"
+package_dir="$build_dir/package"
+mkdir "$package_dir"
+ditto "$app" "$package_dir/MactoyThemer.app"
+ln -s /Applications "$package_dir/Applications"
+hdiutil create -quiet -ov -format UDZO -fs HFS+ \
+    -volname "MactoyThemer ${RELEASE_TAG#v} ($variant)" \
+    -srcfolder "$package_dir" "$output_dir/MactoyThemer-mac-$variant.dmg"
+hdiutil verify "$output_dir/MactoyThemer-mac-$variant.dmg"
