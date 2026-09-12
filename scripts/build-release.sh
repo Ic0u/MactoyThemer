@@ -46,11 +46,18 @@ binary = app / "Contents/MacOS/MactoyThemer"
 actual = subprocess.check_output(["lipo", "-archs", str(binary)], text=True).split()
 if set(actual) != set(sys.argv[3:]):
     raise SystemExit(f"Unexpected app architectures: {actual}")
-# Every nested executable must support the requested architectures too.
+# Swift back-deployment libraries are intentionally x86_64-only: they support
+# old Intel macOS versions, while Apple Silicon macOS provides that runtime.
+# Verify every other Mach-O component against the selected release variant.
 for path in app.rglob("*"):
     if path.is_file() and not path.is_symlink():
         kind = subprocess.check_output(["file", "-b", str(path)], text=True)
-        if "Mach-O" in kind:
+        is_swift_back_deployment_library = (
+            path.parent.name == "Frameworks"
+            and path.name.startswith("libswift")
+            and path.suffix == ".dylib"
+        )
+        if "Mach-O" in kind and not is_swift_back_deployment_library:
             subprocess.run(["lipo", str(path), "-verify_arch", *sys.argv[3:]], check=True)
 subprocess.run(["codesign", "--verify", "--deep", "--strict", "--all-architectures", str(app)], check=True)
 with open(app.parent / "launch.log", "w") as log:
