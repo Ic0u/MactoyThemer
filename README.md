@@ -39,9 +39,20 @@ curl -fsSL https://raw.githubusercontent.com/Ic0u/MactoyThemer/main/install.sh |
 
 ## Screenshots
 
-| Install | Settings | Remove |
-| :---: | :---: | :---: |
-| [![Install tab](docs/screenshots/install.png)](docs/screenshots/install.png) | [![Settings tab](docs/screenshots/settings.png)](docs/screenshots/settings.png) | [![Remove tab](docs/screenshots/remove.png)](docs/screenshots/remove.png) |
+<p align="center">
+  <strong>Install</strong><br>
+  <a href="docs/screenshots/install.png"><img src="docs/screenshots/install.png" width="640" alt="Install tab"></a>
+</p>
+
+<p align="center">
+  <strong>Settings</strong><br>
+  <a href="docs/screenshots/settings.png"><img src="docs/screenshots/settings.png" width="640" alt="Settings tab"></a>
+</p>
+
+<p align="center">
+  <strong>Remove</strong><br>
+  <a href="docs/screenshots/remove.png"><img src="docs/screenshots/remove.png" width="640" alt="Remove tab"></a>
+</p>
 
 ## Requirements
 
