@@ -22,18 +22,7 @@ Choose one installation method.
 curl -fsSL https://raw.githubusercontent.com/Ic0u/MactoyThemer/main/install.sh | bash
 ```
 
-The installer detects your Mac, verifies the release checksum, installs the app in `/Applications`, removes the app's quarantine attribute, and opens it.
-
-### GitHub Releases
-
-Open the DMG and drag **MactoyThemer.app** to Applications.
-
-| Download | Mac | Minimum macOS |
-| --- | --- | --- |
-| [Mac (arm64)](https://github.com/Ic0u/MactoyThemer/releases/latest/download/MactoyThemer-mac-arm64.dmg) | Apple Silicon | 11 |
-| [Mac (x64)](https://github.com/Ic0u/MactoyThemer/releases/latest/download/MactoyThemer-mac-x64.dmg) | Intel | 10.13 |
-| [Mac Universal](https://github.com/Ic0u/MactoyThemer/releases/latest/download/MactoyThemer-mac-universal.dmg) | Apple Silicon and Intel | 11 / 10.13 |
-
+**GitHub Releases:** [Download latest release](https://github.com/your-username/macUSB/releases/latest)
 
 ## Features
 
