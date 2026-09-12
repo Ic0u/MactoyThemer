@@ -19,7 +19,7 @@ Choose one installation method:
  
 1. **GitHub Releases:** [Download latest release](https://github.com/your-username/macUSB/releases/latest)
 Choose a download, unzip it, and move **MactoyThemer.app** to Applications.
-2. **Homebrew:**
+2. **Terminal:**
 ```
 curl
 ```
