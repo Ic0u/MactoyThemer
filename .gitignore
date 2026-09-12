@@ -1,0 +1,45 @@
+# Xcode user state
+xcuserdata/
+*.xcuserstate
+
+# Local agent instructions and editor state
+[Aa][Gg][Ee][Nn][Tt][Ss].[Mm][Dd]
+[Aa][Gg][Ee][Nn][Tt].[Mm][Dd]
+.agents/
+.codex/
+.idea/
+.vscode/
+
+# Build products
+build/
+dist/
+releases/
+DerivedData/
+*.xcarchive
+*.dSYM
+*.dSYM.zip
+*.profraw
+*.xcresult
+*.app/
+MactoyThemer.zip
+
+# macOS
+.DS_Store
+
+# Credentials, certificates, and local configuration
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*.p12
+*.p8
+*.pfx
+*.cer
+*.certSigningRequest
+*.mobileprovision
+*.provisionprofile
+*.keychain
+*.keychain-db
+.netrc
+secrets/
