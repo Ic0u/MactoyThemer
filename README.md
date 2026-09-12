@@ -13,14 +13,18 @@
 </p>
 
 ## Download
-
+---
+ 
+Choose one installation method:
+ 
+1. **GitHub Releases:** [Download latest release](https://github.com/your-username/macUSB/releases/latest)
 Choose a download, unzip it, and move **MactoyThemer.app** to Applications.
-
-| Download | Mac | Minimum macOS |
-| --- | --- | --- |
-| [Mac (arm64)](https://github.com/Ic0u/MactoyThemer/releases/latest/download/MactoyThemer-mac-arm64.zip) | Apple Silicon | 11 |
-| [Mac (x64)](https://github.com/Ic0u/MactoyThemer/releases/latest/download/MactoyThemer-mac-x64.zip) | Intel | 10.13 |
-| [Mac Universal](https://github.com/Ic0u/MactoyThemer/releases/latest/download/MactoyThemer-mac-universal.zip) | Apple Silicon and Intel | 11 / 10.13 |
+2. **Homebrew:**
+```
+curl
+```
+ 
+---
 
 
 ## Features
