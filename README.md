@@ -11,6 +11,7 @@
   <img src="https://img.shields.io/badge/Xcode-15%2B-147EFB?logo=xcode&logoColor=white" alt="Xcode 15 or later">
   <img src="https://img.shields.io/badge/Swift-5.9-F05138?logo=swift&logoColor=white" alt="Swift 5.9">
   <img src="https://img.shields.io/badge/macOS-10.13%2B-555?logo=apple&logoColor=white" alt="macOS 10.13 or later">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT License"></a>
 </p>
 
 ## Download
@@ -35,6 +36,12 @@ curl -fsSL https://raw.githubusercontent.com/Ic0u/MactoyThemer/main/install.sh |
 - Removes individual themes or all installed themes.
 - Checks for signed updates through Sparkle and GitHub Releases.
 - Supports English and Vietnamese.
+
+## Screenshots
+
+| Install | Settings | Remove |
+| :---: | :---: | :---: |
+| [![Install tab](docs/screenshots/install.png)](docs/screenshots/install.png) | [![Settings tab](docs/screenshots/settings.png)](docs/screenshots/settings.png) | [![Remove tab](docs/screenshots/remove.png)](docs/screenshots/remove.png) |
 
 ## Requirements
 
