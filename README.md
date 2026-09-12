@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="MactoyThemer/Assets.xcassets/AppIcon.appiconset/icon_128x128%402x.png" width="128" alt="MactoyThemer app icon">
+  <img src="MactoyThemer/Assets.xcassets/AppIcon.appiconset/icon_128x128%402x.png" width="256" alt="MactoyThemer app icon">
 </p>
 
 <h1 align="center">MactoyThemer</h1>
@@ -12,7 +12,7 @@
   <img src="https://img.shields.io/badge/macOS-10.13%2B-555?logo=apple&logoColor=white" alt="macOS 10.13 or later">
 </p>
 
-MactoyThemer is a native macOS utility for installing and managing themes on a mounted Ventoy drive. It uses AppKit and keeps the interface compact.
+macOS utility for installing and managing themes on a Ventoy drive.
 
 ## Download
 
